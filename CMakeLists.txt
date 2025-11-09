@@ -1,8 +1,6 @@
 cmake_minimum_required(VERSION 3.10)
 project(openae)
 
-set(CMAKE_CXX_STANDARD 23)
-
 string(TIMESTAMP NOW "%Y %m %d")
 string(REPLACE " " ";" DATE_LIST ${NOW})
 list(GET DATE_LIST 0 YEAR)

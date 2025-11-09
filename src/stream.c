@@ -40,7 +40,7 @@ void openae_stream_update(openae_stream_t* stream)
     LOGDEBUG("TODO: -- implement --");
     ALint source_state = 0;
     alGetSourcei(stream->source, AL_SOURCE_STATE, &source_state);
-    stream->playing = source_state != AL_PLAYING;
+    stream->playing = source_state == AL_PLAYING;
 #endif
 }
 
