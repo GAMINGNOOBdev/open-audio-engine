@@ -20,7 +20,9 @@ set(CMAKE_LIBRARY_OUTPUT_DIRECTORY $<1:${CMAKE_BINARY_DIR}/bin>)
 set(CMAKE_RUNTIME_OUTPUT_DIRECTORY $<1:${CMAKE_BINARY_DIR}/bin>)
 
 # OpenAL Options
+set(LIBTYPE STATIC)
 set(ALSOFT_UTILS off)
+set(ALSOFT_RTKIT off)
 set(ALSOFT_INSTALL off)
 set(ALSOFT_EXAMPLES off)
 set(ALSOFT_INSTALL_UTILS off)
@@ -37,7 +39,9 @@ include_directories(
     ${PROJECT_SOURCE_DIR}/openal/include
 )
 
-add_subdirectory(openal-soft)
+if(NOT PSP)
+    add_subdirectory(openal-soft)
+endif()
 
 set(library_sources
     libwave/src/wave.c
@@ -54,15 +58,24 @@ set(project_sources
 
 add_compile_definitions(NOMINMAX)
 add_library(${PROJECT_NAME} STATIC ${project_sources} ${library_sources})
-target_link_libraries(${PROJECT_NAME} PRIVATE
-    OpenAL
-    alsoft.common
-)
+if(PSP)
+    target_link_libraries(${PROJECT_NAME} PRIVATE
+        pspaudiolib
+        pspaudio
+        pspaudiocodec
+    )
 
-add_executable(${PROJECT_NAME}_test test/test.c)
-target_link_libraries(${PROJECT_NAME}_test
-    ${PROJECT_NAME}
-)
+else()
+    target_link_libraries(${PROJECT_NAME} PRIVATE
+        OpenAL
+        alsoft.common
+    )
+
+    add_executable(${PROJECT_NAME}_test test/test.c)
+    target_link_libraries(${PROJECT_NAME}_test
+        ${PROJECT_NAME}
+    )
+endif()
 
 
 if( MSVC )

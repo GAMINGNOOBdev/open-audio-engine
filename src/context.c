@@ -47,9 +47,9 @@ void openae_context_initialize(void)
 
 #ifdef __PSP__
     pspAudioInit();
-    pspAudioSetChannelCallback(0, openae_psp_music_callback, (void*)&openae_current_context.music);
+    pspAudioSetChannelCallback(0, openae_fill_buffer_callback, (void*)&openae_current_context.music);
     // for (size_t i = 0; i < OPENAE_AUDIO_SFX_STREAMS_MAX; i++)
-    //     pspAudioSetChannelCallback(1 + i, openae_psp_music_callback, (void*)(openae_current_context.sfx +i));
+    //     pspAudioSetChannelCallback(1 + i, openae_fill_buffer_callback, (void*)(openae_current_context.sfx +i));
 #else
     openae_current_context.device = openae_context_choose_device();
     openae_current_context.context = alcCreateContext(openae_current_context.device, NULL);

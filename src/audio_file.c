@@ -1,7 +1,12 @@
-#include "wave.h"
 #include <openae/audio_file.h>
 #include <openae/logging.h>
 #include <memory.h>
+
+#ifdef __PSP__
+#   include <pspaudiolib.h>
+#   include <pspkernel.h>
+#   include <pspaudio.h>
+#endif
 
 static int strlpos(const char* str, char c)
 {
