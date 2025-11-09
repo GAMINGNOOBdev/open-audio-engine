@@ -1,0 +1,27 @@
+{
+    // See https://go.microsoft.com/fwlink/?LinkId=733558
+    // for the documentation about the tasks.json format
+    "version": "2.0.0",
+    "tasks": [
+        {
+            "label": "Debug Build",
+            "type": "shell",
+            "command": "cd build; cmake .. -D CMAKE_BUILD_TYPE=Debug ; make -j $(nproc) ; cd ..",
+            "args": [],
+            "problemMatcher": [],
+            "group": {
+                "kind": "build"
+            }
+        },
+        {
+            "label": "Release Build",
+            "type": "shell",
+            "command": "cd build; cmake .. -D CMAKE_BUILD_TYPE=Release ; make -j $(nproc) ; cd ..",
+            "args": [],
+            "problemMatcher": [],
+            "group": {
+                "kind": "build"
+            }
+        }
+    ]
+}

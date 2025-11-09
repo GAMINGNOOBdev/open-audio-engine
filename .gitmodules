@@ -1,0 +1,12 @@
+[submodule "openal-soft"]
+	path = openal-soft
+	url = https://github.com/kcat/openal-soft
+[submodule "minimp3"]
+	path = minimp3
+	url = https://github.com/lieff/minimp3.git
+[submodule "libwave"]
+	path = libwave
+	url = https://github.com/brglng/libwave.git
+[submodule "stb"]
+	path = stb
+	url = https://github.com/nothings/stb.git
