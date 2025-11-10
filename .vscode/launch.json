@@ -10,6 +10,8 @@
             "name": "Debug Test",
             "program": "${workspaceFolder}/build/bin/openae_test",
             "args": [
+                "snd/0.ogg",
+                "snd/1.mp3"
             ],
             "cwd": "${workspaceFolder}/build/",
             "preLaunchTask": "Debug Build"

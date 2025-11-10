@@ -1,9 +1,8 @@
-#include "openae/audio_file.h"
 #define MINIMP3_IMPLEMENTATION
-#define MINIMP3_NO_SIMD
 #include <minimp3.h>
 #include <minimp3_ex.h>
 #undef MINIMP3_IMPLEMENTATION
+#include <openae/audio_file.h>
 #include <openae/logging.h>
 #include <openae/context.h>
 #include <openae/define.h>
@@ -37,6 +36,8 @@ openae_stream_t openae_stream_create(const char* filepath)
 void openae_stream_update(openae_stream_t* stream)
 {
     assume(openae_stream_is_valid(stream));
+    if (!stream->playing)
+        return;
 
     if (stream->processed_frames >= stream->file.samples)
     {
@@ -84,6 +85,9 @@ void openae_stream_update_buffer(openae_stream_t* stream, void* buffer, int byte
     assume(buffer);
     assume(bytes);
 
+    if (!stream->playing)
+        return;
+
     if (stream->processed_frames >= stream->file.samples)
     {
         if (stream->end != NULL)
@@ -120,6 +124,7 @@ void openae_stream_update_buffer(openae_stream_t* stream, void* buffer, int byte
         guaranteed(stream->end) stream->end(stream);
 
         stream->playing = 0;
+        return;
     }
 }
 

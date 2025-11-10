@@ -41,7 +41,6 @@
 #   error Could not detect your operating system
 #endif
 
-#define null NULL
-#define guaranteed(value) if (value != null)
+#define guaranteed(value) if (value != NULL)
 
 #endif

@@ -8,7 +8,6 @@ extern "C" {
 #define STB_VORBIS_HEADER_ONLY
 #include <openae/define.h>
 #include <stb_vorbis.c>
-#define MINIMP3_NO_SIMD
 #include <minimp3_ex.h>
 #include <wave.h>
 

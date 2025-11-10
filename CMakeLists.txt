@@ -55,13 +55,29 @@ set(project_sources
     src/stream.c
 )
 
-add_compile_definitions(NOMINMAX AL_LIBTYPE_STATIC)
+add_compile_definitions(NOMINMAX AL_LIBTYPE_STATIC MINIMP3_NO_SIMD)
 add_library(${PROJECT_NAME} STATIC ${project_sources} ${library_sources})
 if(PSP)
+    add_compile_definitions(__PSP__)
     target_link_libraries(${PROJECT_NAME} PRIVATE
         pspaudiolib
         pspaudio
         pspaudiocodec
+    )
+
+    add_executable(${PROJECT_NAME}_test test/test_psp.c)
+    target_link_libraries(${PROJECT_NAME}_test
+        ${PROJECT_NAME}
+        pspdisplay
+        pspdebug
+        pspge
+        pspgu
+    )
+
+    create_pbp_file(TARGET ${PROJECT_NAME}_test TITLE "${CMAKE_PROJECT_NAME}"
+        # ICON_PATH
+        # BACKGROUND_PATH
+        # PREVIEW_PATH
     )
 
 else()

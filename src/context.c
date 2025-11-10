@@ -33,8 +33,19 @@ static ALCdevice* openae_context_choose_device(void)
 #endif // #ifndef __PSP__
 
 #ifdef __PSP__
-static void openae_fill_buffer_callback(void* buffer, unsigned int length, void* userdata)
+static void openae_fill_buffer_callback(void* buffer, unsigned int samples, void* userdata)
 {
+    uint32_t bytes = sizeof(short) * samples * 2;
+    memset(buffer, 0, bytes);
+    openae_stream_t* stream = (openae_stream_t*)userdata;
+    if (stream == NULL || !openae_stream_is_valid(stream))
+        return;
+
+    openae_stream_update_buffer(stream, buffer, bytes);
+    openae_stream_update(stream);
+
+    if (!stream->playing)
+        openae_stream_dispose(stream);
 }
 #endif
 
@@ -51,9 +62,9 @@ void openae_context_initialize(void)
 
 #ifdef __PSP__
     pspAudioInit();
-    pspAudioSetChannelCallback(0, openae_fill_buffer_callback, (void*)openae_current_context.music);
+    pspAudioSetChannelCallback(0, openae_fill_buffer_callback, (void*)&openae_current_context.music);
     for (size_t i = 0; i < OPENAE_AUDIO_SFX_STREAMS_MAX; i++)
-        pspAudioSetChannelCallback(1 + i, openae_fill_buffer_callback, (void*)(openae_current_context.sfx + i));
+        pspAudioSetChannelCallback(1 + i, openae_fill_buffer_callback, (void*)(&openae_current_context.sfx[i]));
 #else
     openae_current_context.device = openae_context_choose_device();
     openae_current_context.context = alcCreateContext(openae_current_context.device, NULL);
@@ -80,21 +91,21 @@ openae_context_t* openae_context_get_current(void)
 
 openae_stream_t* openae_context_set_music(const char* filepath)
 {
-    assume(openae_initialized, null);
-    assume(filepath, null);
+    assume(openae_initialized, NULL);
+    assume(filepath, NULL);
 
     openae_stream_stop(&openae_current_context.music);
     openae_stream_dispose(&openae_current_context.music);
     openae_current_context.music = openae_stream_create(filepath);
-    assume(openae_stream_is_valid(&openae_current_context.music), null);
+    assume(openae_stream_is_valid(&openae_current_context.music), NULL);
     openae_stream_start(&openae_current_context.music);
     return &openae_current_context.music;
 }
 
 openae_stream_t* openae_context_play_sfx(const char* filepath)
 {
-    assume(openae_initialized, null);
-    assume(filepath, null);
+    assume(openae_initialized, NULL);
+    assume(filepath, NULL);
 
     int freeIndex = -1;
     for (int i = 0; i < OPENAE_AUDIO_SFX_STREAMS_MAX; i++)
@@ -109,12 +120,12 @@ openae_stream_t* openae_context_play_sfx(const char* filepath)
     if (freeIndex == -1)
     {
         LOGERROR("Cannot play stream 0x%x: insufficient available playback slots");
-        return null;
+        return NULL;
     }
 
     openae_stream_dispose(&openae_current_context.sfx[freeIndex]);
     openae_current_context.sfx[freeIndex] = openae_stream_create(filepath);
-    assume(openae_stream_is_valid(&openae_current_context.sfx[freeIndex]), null);
+    assume(openae_stream_is_valid(&openae_current_context.sfx[freeIndex]), NULL);
     openae_stream_start(&openae_current_context.sfx[freeIndex]);
 
     return &openae_current_context.sfx[freeIndex];
@@ -124,14 +135,22 @@ void openae_context_update_all(void)
 {
     assume(openae_initialized);
 
-    openae_stream_update(&openae_current_context.music);
+    openae_stream_t* music = &openae_current_context.music;
+
+    openae_stream_update(music);
     for (int i = 0; i < OPENAE_AUDIO_SFX_STREAMS_MAX; i++)
     {
         openae_stream_t* sfx = &openae_current_context.sfx[i];
         if (!openae_stream_is_valid(sfx))
             continue;
         openae_stream_update(sfx);
+
+        if (!sfx->playing)
+            openae_stream_dispose(sfx);
     }
+
+    if (!music->playing)
+        openae_stream_dispose(music);
 }
 
 void openae_context_dispose(void)
@@ -144,7 +163,9 @@ void openae_context_dispose(void)
 
     openae_initialized = 0;
 
-#ifndef __PSP__
+#ifdef __PSP__
+    pspAudioEnd();
+#else
     alcMakeContextCurrent(NULL);
     alcDestroyContext(openae_current_context.context);
     alcCloseDevice(openae_current_context.device);

@@ -1,5 +1,5 @@
-#ifndef __BARANIUM__LOGGING_H_
-#define __BARANIUM__LOGGING_H_ 1
+#ifndef __OPENAE__LOGGING_H_
+#define __OPENAE__LOGGING_H_ 1
 
 #ifdef __cplusplus
 extern "C" {
@@ -72,6 +72,11 @@ void log_set_stream(FILE* stream);
  * @param line Line
  */
 void log_msg(loglevel_t lvl, const char* msg, const char* file, int line);
+
+/**
+ * @brief Set the logging message handler (for handling messages by the user)
+ */
+void log_set_msg_handler(void (*handler)(const char* msg));
 
 #ifdef __cplusplus
 }

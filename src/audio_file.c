@@ -62,7 +62,11 @@ openae_audio_file_t openae_audio_file_open(const char* filepath)
     else if (mp3 == 0)
     {
         LOGINFO("loading mp3 file '%s'", filepath);
+        #ifdef __PSP__
+        if (mp3dec_ex_open(&file.mp3, filepath, MP3D_SEEK_TO_BYTE))
+        #else
         if (mp3dec_ex_open(&file.mp3, filepath, MP3D_SEEK_TO_SAMPLE))
+        #endif
         {
             LOGERROR("could not load audio file '%s': Unknown error", filepath);
             return file;
@@ -70,7 +74,7 @@ openae_audio_file_t openae_audio_file_open(const char* filepath)
 
         file.samples = file.mp3.samples;
         file.freq = file.mp3.info.hz;
-        file.length = (float)file.samples / (float)file.freq;
+        file.length = (float)file.samples / (float)file.freq / 2.0f;
         file.channels = file.mp3.info.channels;
 
         LOGINFO("sample rate: '%d' | channels: '%d' | frame_bytes: '%d' | length: '%f' | samples: '%d'", file.freq, file.mp3.info.channels, file.mp3.info.frame_bytes, file.length, file.samples);
@@ -121,18 +125,18 @@ void openae_audio_file_seek(openae_audio_file_t* file, uint64_t pos)
 
     if (file->format == OPENAE_AUDIO_FORMAT_VORBIS)
     {
+        LOGDEBUG("vorbis handler seeking to position %lld", pos);
         stb_vorbis_seek(file->vorbis_stream, pos);
-        LOGDEBUG("vorbis handler seeked to position %d", pos);
     }
     else if (file->format == OPENAE_AUDIO_FORMAT_MP3)
     {
+        LOGDEBUG("mp3 handler seeking to position %lld", pos);
         mp3dec_ex_seek(&file->mp3, pos);
-        LOGDEBUG("mp3 handler seeked to position %d", pos);
     }
     else if (file->format == OPENAE_AUDIO_FORMAT_WAV)
     {
+        LOGDEBUG("wav handler seeking to position %lld", pos);
         wave_seek(file->wav, pos, 0);
-        LOGDEBUG("wav handler seeked to position %d", pos);
     }
 }
 
