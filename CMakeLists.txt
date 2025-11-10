@@ -50,13 +50,12 @@ set(library_sources
 
 set(project_sources
     src/audio_file.c
-    src/callbacks.c
     src/context.c
     src/logging.c
     src/stream.c
 )
 
-add_compile_definitions(NOMINMAX)
+add_compile_definitions(NOMINMAX AL_LIBTYPE_STATIC)
 add_library(${PROJECT_NAME} STATIC ${project_sources} ${library_sources})
 if(PSP)
     target_link_libraries(${PROJECT_NAME} PRIVATE

@@ -30,8 +30,7 @@ openae_audio_file_t openae_audio_file_open(const char* filepath)
     memset(&file, 0, sizeof(openae_audio_file_t));
     file.format = OPENAE_AUDIO_FORMAT_INVALID;
 
-    if (!filepath)
-        return file;
+    assume(filepath, file);
 
     int lastDot = strlpos(filepath, '.');
     int vorbis = strcmp(&filepath[lastDot+1], "ogg");
@@ -92,12 +91,10 @@ openae_audio_file_t openae_audio_file_open(const char* filepath)
 
         file.format = OPENAE_AUDIO_FORMAT_WAV;
 
-        LOGINFO("sample rate: '%ld' | channels: '%d' | length: '%f'", file.freq, file.channels, file.length);
+        LOGINFO("sample rate: '%ld' | channels: '%d' | length: '%f' | sample size: '%lld'", file.freq, file.channels, file.length, wave_get_sample_size(file.wav));
     }
     else
-    {
         LOGERROR("could not load audio file '%s': Invalid format", filepath);
-    }
 
     file.length_ms = file.length * 1000.0f;
 
@@ -110,16 +107,14 @@ openae_audio_file_t openae_audio_file_open(const char* filepath)
 
 uint8_t openae_audio_file_is_valid(openae_audio_file_t* file)
 {
-    if (!file)
-        return 0;
+    assume(file, 0);
 
     return file->format != OPENAE_AUDIO_FORMAT_INVALID;
 }
 
 void openae_audio_file_close(openae_audio_file_t* file)
 {
-    if (!file)
-        return;
+    assume(file);
 
     if (file->format == OPENAE_AUDIO_FORMAT_VORBIS)
         stb_vorbis_close(file->vorbis_stream);

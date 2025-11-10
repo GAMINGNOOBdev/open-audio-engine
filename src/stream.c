@@ -3,12 +3,15 @@
 #include <minimp3.h>
 #include <minimp3_ex.h>
 #undef MINIMP3_IMPLEMENTATION
-#include <openae/callbacks.h>
 #include <openae/logging.h>
 #include <openae/context.h>
 #include <openae/define.h>
 #include <openae/stream.h>
 #include <memory.h>
+
+#ifndef __PSP__
+#   include <AL/al.h>
+#endif
 
 
 openae_stream_t openae_stream_create(openae_audio_file_t* file)
@@ -16,8 +19,7 @@ openae_stream_t openae_stream_create(openae_audio_file_t* file)
     openae_stream_t stream;
     memset(&stream, 0, sizeof(openae_stream_t));
 
-    if (!file)
-        return stream;
+    assume(file, stream);
 
     stream.file = file;
     stream.volume = 1.0f;
@@ -33,38 +35,111 @@ openae_stream_t openae_stream_create(openae_audio_file_t* file)
 
 void openae_stream_update(openae_stream_t* stream)
 {
-    if (!openae_stream_is_valid(stream))
-        return;
+    assume(openae_stream_is_valid(stream));
 
 #ifndef __PSP__
-    LOGDEBUG("TODO: -- implement --");
     ALint source_state = 0;
     alGetSourcei(stream->source, AL_SOURCE_STATE, &source_state);
     stream->playing = source_state == AL_PLAYING;
+
+    ALint processed_buffer_count = 0;
+    alGetSourcei(stream->source, AL_BUFFERS_PROCESSED, &processed_buffer_count);
+    if (processed_buffer_count <= 0)
+        return;
+
+    ALuint* buffers = openae_context_get_current()->processed_buffers;
+    alSourceUnqueueBuffers(stream->source, processed_buffer_count, buffers);
+
+    for (int i = 0; i < processed_buffer_count; i++)
+    {
+        ALuint buffer = buffers[i];
+        openae_stream_update_buffer(stream, stream->data, OPENAE_AUDIO_FRAME_SIZE);
+        alBufferData(buffer, AL_FORMAT_STEREO16, stream->data, OPENAE_AUDIO_FRAME_SIZE, stream->file->freq);
+    }
+
+    alSourceQueueBuffers(stream->source, processed_buffer_count, buffers);
 #endif
+}
+
+void openae_stream_update_buffer(openae_stream_t* stream, void* buffer, int bytes)
+{
+    assume(openae_stream_is_valid(stream));
+    assume(buffer);
+    assume(bytes);
+
+    if (stream->processed_frames >= stream->file->samples)
+    {
+        if (stream->end != NULL)
+            stream->end(stream);
+
+        stream->playing = 0;
+        return;
+    }
+
+    int frames = 0;
+    int expectedFrames = bytes / sizeof(short);
+    memset(buffer, 0, bytes);
+
+    if (stream->format == OPENAE_AUDIO_FORMAT_VORBIS)
+    {
+        expectedFrames /= stream->file->vorbis_info.channels;
+        frames = stb_vorbis_get_samples_short_interleaved(stream->file->vorbis_stream, stream->file->vorbis_info.channels, (short*)buffer, expectedFrames*sizeof(short));
+    }
+    else if (stream->format == OPENAE_AUDIO_FORMAT_WAV)
+    {
+        expectedFrames /= wave_get_sample_size(stream->file->wav);
+        frames = wave_read(stream->file->wav, buffer, expectedFrames);
+    }
+    else if (stream->format == OPENAE_AUDIO_FORMAT_MP3)
+        frames = mp3dec_ex_read(&stream->file->mp3, (mp3d_sample_t*)buffer, expectedFrames);
+
+    for (int i = 0; i < expectedFrames; i++)
+        ((short*)buffer)[i] *= stream->volume;
+
+    stream->processed_frames += frames;
+
+    if (frames < expectedFrames)
+    {
+        guaranteed(stream->end) stream->end(stream);
+
+        stream->playing = 0;
+    }
 }
 
 uint8_t openae_stream_is_valid(openae_stream_t* stream)
 {
-    if (!stream)
-        return 0;
+    assume(stream, 0);
 
     return stream->file != NULL;
 }
 
 void openae_stream_start(openae_stream_t* stream)
 {
-    if (!stream)
-        return;
+    assume(stream);
 
     openae_stream_stop(stream);
-    openae_stream_update(stream);
+    stream->playing = 1;
+
+#ifndef __PSP__
+    ALuint* buffers = stream->buffers;
+    for (int i = 0; i < OPENAE_AUDIO_BUFFERS_PER_SOURCE; i++)
+    {
+        ALuint buffer = buffers[i];
+        openae_stream_update_buffer(stream, stream->data, OPENAE_AUDIO_FRAME_SIZE);
+        alBufferData(buffer, AL_FORMAT_STEREO16, stream->data, OPENAE_AUDIO_FRAME_SIZE, stream->file->freq);
+    }
+
+    alSourceQueueBuffers(stream->source, OPENAE_AUDIO_BUFFERS_PER_SOURCE, buffers);
+
+    alSourcePlay(stream->source);
+#endif
 }
 
 void openae_stream_stop(openae_stream_t* stream)
 {
-    if (!stream)
-        return;
+    assume(stream);
+
+    stream->playing = 0;
 
 #ifndef __PSP__
     ALint processed_buffer_count = 0;
@@ -80,9 +155,8 @@ void openae_stream_stop(openae_stream_t* stream)
 
 void openae_stream_dispose(openae_stream_t* stream)
 {
-    if (!stream)
-        return;
-    
+    assume(stream);
+
 #ifndef __PSP__
     alDeleteBuffers(OPENAE_AUDIO_BUFFERS_PER_SOURCE, stream->buffers);
     alDeleteSources(1, &stream->source);

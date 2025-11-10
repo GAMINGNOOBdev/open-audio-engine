@@ -1,4 +1,3 @@
-#include <openae/callbacks.h>
 #include <openae/context.h>
 #include <openae/logging.h>
 #include <openae/define.h>
@@ -33,13 +32,18 @@ static ALCdevice* openae_context_choose_device(void)
 }
 #endif // #ifndef __PSP__
 
+#ifdef __PSP__
+static void openae_fill_buffer_callback(void* buffer, unsigned int length, void* userdata)
+{
+}
+#endif
+
 static openae_context_t openae_current_context;
 static uint8_t openae_initialized = 0;
 
 void openae_context_initialize(void)
 {
-    if (openae_initialized)
-        return;
+    assume(!openae_initialized);
 
     openae_initialized = 1;
     memset(&openae_current_context, 0, sizeof(openae_context_t));
@@ -47,9 +51,9 @@ void openae_context_initialize(void)
 
 #ifdef __PSP__
     pspAudioInit();
-    pspAudioSetChannelCallback(0, openae_fill_buffer_callback, (void*)&openae_current_context.music);
-    // for (size_t i = 0; i < OPENAE_AUDIO_SFX_STREAMS_MAX; i++)
-    //     pspAudioSetChannelCallback(1 + i, openae_fill_buffer_callback, (void*)(openae_current_context.sfx +i));
+    pspAudioSetChannelCallback(0, openae_fill_buffer_callback, (void*)openae_current_context.music);
+    for (size_t i = 0; i < OPENAE_AUDIO_SFX_STREAMS_MAX; i++)
+        pspAudioSetChannelCallback(1 + i, openae_fill_buffer_callback, (void*)(openae_current_context.sfx + i));
 #else
     openae_current_context.device = openae_context_choose_device();
     openae_current_context.context = alcCreateContext(openae_current_context.device, NULL);
@@ -69,47 +73,63 @@ void openae_context_initialize(void)
 
 openae_context_t* openae_context_get_current(void)
 {
+    assume(openae_initialized, NULL);
+
     return &openae_current_context;
 }
 
 void openae_context_set_music(openae_stream_t* stream)
 {
-    if (!openae_initialized)
-        return;
+    assume(openae_initialized);
 
     openae_stream_stop(openae_current_context.music);
     openae_current_context.music = stream;
-    #ifndef __PSP__
-    if (stream == NULL)
-        return;
-
-    openae_stream_start(openae_current_context.music);
-
-    #endif
+    guaranteed(stream) openae_stream_start(stream);
 }
 
 void openae_context_play_sfx(openae_stream_t* stream)
 {
-    if (!openae_initialized || !stream)
-        return;
+    assume(openae_initialized);
+    assume(stream);
 
-    //
+    int freeIndex = -1;
+    for (int i = 0; i < OPENAE_AUDIO_SFX_STREAMS_MAX; i++)
+    {
+        if (!openae_current_context.sfx[i])
+        {
+            freeIndex = i;
+            break;
+        }
+    }
+
+    if (freeIndex == -1)
+    {
+        LOGERROR("Cannot play stream 0x%x: insufficient available playback slots");
+        return;
+    }
+
+    openae_stream_stop(stream);
+    openae_current_context.sfx[freeIndex] = stream;
+    guaranteed(stream) openae_stream_start(stream);
 }
 
 void openae_context_update_all(void)
 {
-    if (!openae_initialized)
-        return;
+    assume(openae_initialized);
 
     openae_stream_update(openae_current_context.music);
     for (int i = 0; i < OPENAE_AUDIO_SFX_STREAMS_MAX; i++)
-        openae_stream_update(openae_current_context.sfx[i]);
+    {
+        openae_stream_t* sfx = openae_current_context.sfx[i];
+        if (!sfx)
+            continue;
+        openae_stream_update(sfx);
+    }
 }
 
 void openae_context_dispose(void)
 {
-    if (!openae_initialized)
-        return;
+    assume(openae_initialized);
 
     openae_initialized = 0;
 

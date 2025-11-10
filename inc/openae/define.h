@@ -15,10 +15,8 @@
 #define OPENAE_PLATFORM_NAME_APPLE     "Apple MacOS"
 #define OPENAE_PLATFORM_NAME_PSP       "PlayStationPortable (PSP)"
 
-#ifdef __PSP__
-#   define AUDIO_FRAME_SIZE 0x100
-#else
-#   define AUDIO_FRAME_SIZE 0x400
+#ifndef __PSP__
+#   define OPENAE_AUDIO_FRAME_SIZE 0x1000
 #endif
 
 #define OPENAE_AUDIO_STREAMS_MAX 8
@@ -42,5 +40,8 @@
 #   define OPENAE_PLATFORM_NAME    OPENAE_PLATFORM_NAME_UNKNOWN
 #   error Could not detect your operating system
 #endif
+
+#define null NULL
+#define guaranteed(value) if (value != null)
 
 #endif

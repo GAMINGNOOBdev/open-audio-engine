@@ -12,7 +12,6 @@ extern "C" {
 #   include <pspkernel.h>
 #   include <pspaudio.h>
 #else
-#   define AL_LIBTYPE_STATIC
 #   include <AL/al.h>
 #   include <AL/alc.h>
 #endif
@@ -22,17 +21,16 @@ typedef void(*openae_audio_stream_end_callback_t)(void* stream);
 typedef struct openae_stream_t
 {
     float volume;
-    uint8_t ready;
     uint8_t playing;
     int processed_frames;
     openae_audio_file_t* file;
     openae_audio_format_t format;
-    openae_audio_stream_end_callback_t end;
+    openae_audio_stream_end_callback_t end; // Only useful for music lol
 
     #ifndef __PSP__
         ALuint source;
         ALuint buffers[OPENAE_AUDIO_BUFFERS_PER_SOURCE];
-        short data[AUDIO_FRAME_SIZE];
+        short data[OPENAE_AUDIO_FRAME_SIZE];
     #endif
 } openae_stream_t;
 
@@ -50,6 +48,15 @@ openae_stream_t openae_stream_create(openae_audio_file_t* file);
  * @param stream Audio stream
  */
 void openae_stream_update(openae_stream_t* stream);
+
+/**
+ * @brief Update a buffer using this stream
+ * 
+ * @param stream Audio stream
+ * @param buffer Audio buffer
+ * @param bytes Audio buffer size
+ */
+void openae_stream_update_buffer(openae_stream_t* stream, void* buffer, int bytes);
 
 /**
  * @brief Check whether stream is valid

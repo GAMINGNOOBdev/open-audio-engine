@@ -22,6 +22,8 @@ typedef unsigned char loglevel_t;
 #define LOGERROR(...) log_msg(LOGLEVEL_ERROR, logstringf(__VA_ARGS__), __FILE_NAME__, __LINE__)
 #define LOGWARNING(...) log_msg(LOGLEVEL_WARNING, logstringf(__VA_ARGS__), __FILE_NAME__, __LINE__)
 
+#define assume(expr, ...) if (!(expr)) { LOGERROR("assume '%s' failed", #expr); return __VA_ARGS__; } (void)0
+
 /**
  * @brief Like printf but for building a string together
  * 
