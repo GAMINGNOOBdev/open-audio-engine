@@ -28,7 +28,7 @@ typedef struct openae_audio_file_t
     int length_ms;
     uint32_t samples;
 
-    stb_vorbis* vorbis_stream;
+    struct stb_vorbis* vorbis_stream;
     stb_vorbis_info vorbis_info;
     mp3dec_ex_t mp3;
     WaveFile* wav;
@@ -51,6 +51,14 @@ openae_audio_file_t openae_audio_file_open(const char* filepath);
  * @returns 1 if valid, 0 if not
  */
 uint8_t openae_audio_file_is_valid(openae_audio_file_t* file);
+
+/**
+ * @brief Seek the audio to a specific position/frame
+ * 
+ * @param file Audio file
+ * @param pos Position
+ */
+void openae_audio_file_seek(openae_audio_file_t* file, uint64_t pos);
 
 /**
  * @brief Closes an audio file

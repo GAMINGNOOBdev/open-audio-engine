@@ -21,9 +21,10 @@ typedef void(*openae_audio_stream_end_callback_t)(void* stream);
 typedef struct openae_stream_t
 {
     float volume;
+    float seconds; // current position in seconds
     uint8_t playing;
     int processed_frames;
-    openae_audio_file_t* file;
+    openae_audio_file_t file;
     openae_audio_format_t format;
     openae_audio_stream_end_callback_t end; // Only useful for music lol
 
@@ -37,10 +38,10 @@ typedef struct openae_stream_t
 /**
  * @brief Create an audio stream
  * 
- * @param file File
+ * @param file File path
  * @returns Audio stream
  */
-openae_stream_t openae_stream_create(openae_audio_file_t* file);
+openae_stream_t openae_stream_create(const char* filepath);
 
 /**
  * @brief Update the stream

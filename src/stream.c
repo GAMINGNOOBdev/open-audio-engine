@@ -1,3 +1,4 @@
+#include "openae/audio_file.h"
 #define MINIMP3_IMPLEMENTATION
 #define MINIMP3_NO_SIMD
 #include <minimp3.h>
@@ -14,16 +15,16 @@
 #endif
 
 
-openae_stream_t openae_stream_create(openae_audio_file_t* file)
+openae_stream_t openae_stream_create(const char* filepath)
 {
     openae_stream_t stream;
     memset(&stream, 0, sizeof(openae_stream_t));
 
-    assume(file, stream);
+    stream.file = openae_audio_file_open(filepath);
+    assume(openae_audio_file_is_valid(&stream.file), stream);
 
-    stream.file = file;
     stream.volume = 1.0f;
-    stream.format = file->format;
+    stream.format = stream.file.format;
 
 #ifndef __PSP__
     alGenSources(1, &stream.source);
@@ -36,6 +37,15 @@ openae_stream_t openae_stream_create(openae_audio_file_t* file)
 void openae_stream_update(openae_stream_t* stream)
 {
     assume(openae_stream_is_valid(stream));
+
+    if (stream->processed_frames >= stream->file.samples)
+    {
+        if (stream->end != NULL)
+            stream->end(stream);
+
+        stream->playing = 0;
+        return;
+    }
 
 #ifndef __PSP__
     ALint source_state = 0;
@@ -54,11 +64,18 @@ void openae_stream_update(openae_stream_t* stream)
     {
         ALuint buffer = buffers[i];
         openae_stream_update_buffer(stream, stream->data, OPENAE_AUDIO_FRAME_SIZE);
-        alBufferData(buffer, AL_FORMAT_STEREO16, stream->data, OPENAE_AUDIO_FRAME_SIZE, stream->file->freq);
+        alBufferData(buffer, AL_FORMAT_STEREO16, stream->data, OPENAE_AUDIO_FRAME_SIZE, stream->file.freq);
     }
 
     alSourceQueueBuffers(stream->source, processed_buffer_count, buffers);
 #endif
+
+    if (stream->file.format == OPENAE_AUDIO_FORMAT_VORBIS)
+        stream->seconds = (float)stb_vorbis_get_sample_offset(stream->file.vorbis_stream) / (float)stream->file.samples * 1000.f * stream->file.length;
+    else if (stream->file.format == OPENAE_AUDIO_FORMAT_MP3)
+        stream->seconds = (float)stream->processed_frames / (float)stream->file.samples * 1000.f * stream->file.length;
+    else
+        stream->seconds = (float)stream->processed_frames / (float)stream->file.samples * 1000.f;
 }
 
 void openae_stream_update_buffer(openae_stream_t* stream, void* buffer, int bytes)
@@ -67,7 +84,7 @@ void openae_stream_update_buffer(openae_stream_t* stream, void* buffer, int byte
     assume(buffer);
     assume(bytes);
 
-    if (stream->processed_frames >= stream->file->samples)
+    if (stream->processed_frames >= stream->file.samples)
     {
         if (stream->end != NULL)
             stream->end(stream);
@@ -82,16 +99,16 @@ void openae_stream_update_buffer(openae_stream_t* stream, void* buffer, int byte
 
     if (stream->format == OPENAE_AUDIO_FORMAT_VORBIS)
     {
-        expectedFrames /= stream->file->vorbis_info.channels;
-        frames = stb_vorbis_get_samples_short_interleaved(stream->file->vorbis_stream, stream->file->vorbis_info.channels, (short*)buffer, expectedFrames*sizeof(short));
+        expectedFrames /= stream->file.vorbis_info.channels;
+        frames = stb_vorbis_get_samples_short_interleaved(stream->file.vorbis_stream, stream->file.vorbis_info.channels, (short*)buffer, expectedFrames*sizeof(short));
     }
     else if (stream->format == OPENAE_AUDIO_FORMAT_WAV)
     {
-        expectedFrames /= wave_get_sample_size(stream->file->wav);
-        frames = wave_read(stream->file->wav, buffer, expectedFrames);
+        expectedFrames /= wave_get_sample_size(stream->file.wav);
+        frames = wave_read(stream->file.wav, buffer, expectedFrames);
     }
     else if (stream->format == OPENAE_AUDIO_FORMAT_MP3)
-        frames = mp3dec_ex_read(&stream->file->mp3, (mp3d_sample_t*)buffer, expectedFrames);
+        frames = mp3dec_ex_read(&stream->file.mp3, (mp3d_sample_t*)buffer, expectedFrames);
 
     for (int i = 0; i < expectedFrames; i++)
         ((short*)buffer)[i] *= stream->volume;
@@ -110,7 +127,7 @@ uint8_t openae_stream_is_valid(openae_stream_t* stream)
 {
     assume(stream, 0);
 
-    return stream->file != NULL;
+    return openae_audio_file_is_valid(&stream->file);
 }
 
 void openae_stream_start(openae_stream_t* stream)
@@ -126,7 +143,7 @@ void openae_stream_start(openae_stream_t* stream)
     {
         ALuint buffer = buffers[i];
         openae_stream_update_buffer(stream, stream->data, OPENAE_AUDIO_FRAME_SIZE);
-        alBufferData(buffer, AL_FORMAT_STEREO16, stream->data, OPENAE_AUDIO_FRAME_SIZE, stream->file->freq);
+        alBufferData(buffer, AL_FORMAT_STEREO16, stream->data, OPENAE_AUDIO_FRAME_SIZE, stream->file.freq);
     }
 
     alSourceQueueBuffers(stream->source, OPENAE_AUDIO_BUFFERS_PER_SOURCE, buffers);
@@ -139,6 +156,7 @@ void openae_stream_stop(openae_stream_t* stream)
 {
     assume(stream);
 
+    openae_audio_file_seek(&stream->file, 0);
     stream->playing = 0;
 
 #ifndef __PSP__
@@ -156,6 +174,8 @@ void openae_stream_stop(openae_stream_t* stream)
 void openae_stream_dispose(openae_stream_t* stream)
 {
     assume(stream);
+
+    openae_audio_file_close(&stream->file);
 
 #ifndef __PSP__
     alDeleteBuffers(OPENAE_AUDIO_BUFFERS_PER_SOURCE, stream->buffers);

@@ -78,24 +78,28 @@ openae_context_t* openae_context_get_current(void)
     return &openae_current_context;
 }
 
-void openae_context_set_music(openae_stream_t* stream)
+openae_stream_t* openae_context_set_music(const char* filepath)
 {
-    assume(openae_initialized);
+    assume(openae_initialized, null);
+    assume(filepath, null);
 
-    openae_stream_stop(openae_current_context.music);
-    openae_current_context.music = stream;
-    guaranteed(stream) openae_stream_start(stream);
+    openae_stream_stop(&openae_current_context.music);
+    openae_stream_dispose(&openae_current_context.music);
+    openae_current_context.music = openae_stream_create(filepath);
+    assume(openae_stream_is_valid(&openae_current_context.music), null);
+    openae_stream_start(&openae_current_context.music);
+    return &openae_current_context.music;
 }
 
-void openae_context_play_sfx(openae_stream_t* stream)
+openae_stream_t* openae_context_play_sfx(const char* filepath)
 {
-    assume(openae_initialized);
-    assume(stream);
+    assume(openae_initialized, null);
+    assume(filepath, null);
 
     int freeIndex = -1;
     for (int i = 0; i < OPENAE_AUDIO_SFX_STREAMS_MAX; i++)
     {
-        if (!openae_current_context.sfx[i])
+        if (!openae_stream_is_valid(&openae_current_context.sfx[i]))
         {
             freeIndex = i;
             break;
@@ -105,23 +109,26 @@ void openae_context_play_sfx(openae_stream_t* stream)
     if (freeIndex == -1)
     {
         LOGERROR("Cannot play stream 0x%x: insufficient available playback slots");
-        return;
+        return null;
     }
 
-    openae_stream_stop(stream);
-    openae_current_context.sfx[freeIndex] = stream;
-    guaranteed(stream) openae_stream_start(stream);
+    openae_stream_dispose(&openae_current_context.sfx[freeIndex]);
+    openae_current_context.sfx[freeIndex] = openae_stream_create(filepath);
+    assume(openae_stream_is_valid(&openae_current_context.sfx[freeIndex]), null);
+    openae_stream_start(&openae_current_context.sfx[freeIndex]);
+
+    return &openae_current_context.sfx[freeIndex];
 }
 
 void openae_context_update_all(void)
 {
     assume(openae_initialized);
 
-    openae_stream_update(openae_current_context.music);
+    openae_stream_update(&openae_current_context.music);
     for (int i = 0; i < OPENAE_AUDIO_SFX_STREAMS_MAX; i++)
     {
-        openae_stream_t* sfx = openae_current_context.sfx[i];
-        if (!sfx)
+        openae_stream_t* sfx = &openae_current_context.sfx[i];
+        if (!openae_stream_is_valid(sfx))
             continue;
         openae_stream_update(sfx);
     }
@@ -130,6 +137,10 @@ void openae_context_update_all(void)
 void openae_context_dispose(void)
 {
     assume(openae_initialized);
+
+    openae_stream_dispose(&openae_current_context.music);
+    for (int i = 0; i < OPENAE_AUDIO_SFX_STREAMS_MAX; i++)
+        openae_stream_dispose(&openae_current_context.sfx[i]);
 
     openae_initialized = 0;
 

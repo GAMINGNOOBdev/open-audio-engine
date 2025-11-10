@@ -23,8 +23,8 @@ typedef struct openae_context_t
 #endif
 
     uint8_t initialized;
-    openae_stream_t* sfx[OPENAE_AUDIO_SFX_STREAMS_MAX];
-    openae_stream_t* music;
+    openae_stream_t sfx[OPENAE_AUDIO_SFX_STREAMS_MAX];
+    openae_stream_t music;
     float audio_volume;
 } openae_context_t;
 
@@ -42,17 +42,21 @@ openae_context_t* openae_context_get_current(void);
  * @brief Set the currently playing music (immediately playing it)
  * 
  * @param ctx Context
- * @param stream Audio stream
+ * @param filepath Audio file path
+ * 
+ * @returns The created stream
  */
-void openae_context_set_music(openae_stream_t* stream);
+openae_stream_t* openae_context_set_music(const char* filepath);
 
 /**
  * @brief Add a sfx to the queue (and immediately playing it)
  * 
  * @param ctx Context
- * @param stream Audio stream
+ * @param filepath Audio file path
+ * 
+ * @returns The created stream
  */
-void openae_context_play_sfx(openae_stream_t* stream);
+openae_stream_t* openae_context_play_sfx(const char* filepath);
 
 /**
  * @brief Update all and every sounds

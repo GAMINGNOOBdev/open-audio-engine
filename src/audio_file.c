@@ -2,6 +2,9 @@
 #include <openae/logging.h>
 #include <memory.h>
 
+#define STB_VORBIS_HEADER_ONLY
+#include <stb_vorbis.c>
+
 #ifdef __PSP__
 #   include <pspaudiolib.h>
 #   include <pspkernel.h>
@@ -110,6 +113,27 @@ uint8_t openae_audio_file_is_valid(openae_audio_file_t* file)
     assume(file, 0);
 
     return file->format != OPENAE_AUDIO_FORMAT_INVALID;
+}
+
+void openae_audio_file_seek(openae_audio_file_t* file, uint64_t pos)
+{
+    assume(file);
+
+    if (file->format == OPENAE_AUDIO_FORMAT_VORBIS)
+    {
+        stb_vorbis_seek(file->vorbis_stream, pos);
+        LOGDEBUG("vorbis handler seeked to position %d", pos);
+    }
+    else if (file->format == OPENAE_AUDIO_FORMAT_MP3)
+    {
+        mp3dec_ex_seek(&file->mp3, pos);
+        LOGDEBUG("mp3 handler seeked to position %d", pos);
+    }
+    else if (file->format == OPENAE_AUDIO_FORMAT_WAV)
+    {
+        wave_seek(file->wav, pos, 0);
+        LOGDEBUG("wav handler seeked to position %d", pos);
+    }
 }
 
 void openae_audio_file_close(openae_audio_file_t* file)
