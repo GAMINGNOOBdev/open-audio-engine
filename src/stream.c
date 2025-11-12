@@ -183,6 +183,14 @@ void openae_stream_dispose(openae_stream_t* stream)
     openae_audio_file_close(&stream->file);
 
 #ifndef __PSP__
+    ALint processed_buffer_count = 0;
+    alGetSourcei(stream->source, AL_BUFFERS_PROCESSED, &processed_buffer_count);
+    if (processed_buffer_count > 0)
+    {
+        memset(openae_context_get_current()->processed_buffers, 0, sizeof(ALuint)*OPENAE_AUDIO_BUFFERS_PER_SOURCE);
+        alSourceUnqueueBuffers(stream->source, OPENAE_AUDIO_BUFFERS_PER_SOURCE, openae_context_get_current()->processed_buffers);
+    }
+
     alDeleteBuffers(OPENAE_AUDIO_BUFFERS_PER_SOURCE, stream->buffers);
     alDeleteSources(1, &stream->source);
 #endif

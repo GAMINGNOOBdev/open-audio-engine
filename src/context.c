@@ -58,7 +58,7 @@ void openae_context_initialize(void)
 
     openae_initialized = 1;
     memset(&openae_current_context, 0, sizeof(openae_context_t));
-    openae_current_context.audio_volume = 1.0f;
+    openae_current_context.volume = 1.0f;
 
 #ifdef __PSP__
     pspAudioInit();
@@ -70,7 +70,7 @@ void openae_context_initialize(void)
     openae_current_context.context = alcCreateContext(openae_current_context.device, NULL);
     alcMakeContextCurrent(openae_current_context.context);
 
-    alListenerf(AL_GAIN, 1.0f);
+    alListenerf(AL_GAIN, openae_current_context.volume);
     alListener3f(AL_POSITION, 0, 0, 0);
     alListener3f(AL_VELOCITY, 0, 0, 0);
     ALfloat listenerOrientation[] = {
@@ -135,6 +135,12 @@ void openae_context_update_all(void)
 {
     assume(openae_initialized);
 
+#ifndef __PSP__
+    alListenerf(AL_GAIN, openae_current_context.volume);
+#else
+    int vol = (int)(openae_current_context.volume * (float)PSP_VOLUME_MAX);
+    pspAudioSetVolume(0, vol, vol);
+#endif
     openae_stream_t* music = &openae_current_context.music;
 
     openae_stream_update(music);

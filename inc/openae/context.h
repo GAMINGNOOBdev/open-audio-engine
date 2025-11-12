@@ -25,7 +25,7 @@ typedef struct openae_context_t
     uint8_t initialized;
     openae_stream_t sfx[OPENAE_AUDIO_SFX_STREAMS_MAX];
     openae_stream_t music;
-    float audio_volume;
+    float volume;
 } openae_context_t;
 
 /**
