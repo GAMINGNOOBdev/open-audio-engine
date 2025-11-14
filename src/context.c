@@ -142,8 +142,8 @@ void openae_context_update_all(void)
     pspAudioSetVolume(0, vol, vol);
 #endif
     openae_stream_t* music = &openae_current_context.music;
-
-    openae_stream_update(music);
+    if (openae_stream_is_valid(music))
+        openae_stream_update(music);
     for (int i = 0; i < OPENAE_AUDIO_SFX_STREAMS_MAX; i++)
     {
         openae_stream_t* sfx = &openae_current_context.sfx[i];
