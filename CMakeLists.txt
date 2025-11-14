@@ -32,11 +32,11 @@ set(ALSOFT_INSTALL_HRTF_DATA off)
 set(ALSOFT_INSTALL_AMBDEC_PRESETS off)
 
 include_directories(
-    inc
-    libwave/include
-    minimp3
-    stb
-    ${PROJECT_SOURCE_DIR}/openal/include
+    ${PROJECT_SOURCE_DIR}/inc
+    ${PROJECT_SOURCE_DIR}/libwave/include
+    ${PROJECT_SOURCE_DIR}/minimp3
+    ${PROJECT_SOURCE_DIR}/stb
+    ${PROJECT_SOURCE_DIR}/openal-soft/include
 )
 
 if(NOT PSP)

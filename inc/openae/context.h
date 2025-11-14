@@ -1,6 +1,10 @@
 #ifndef __OPENAE__CONTEXT_H_
 #define __OPENAE__CONTEXT_H_
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 #ifdef __PSP__
 #   include <pspaudiolib.h>
 #   include <pspkernel.h>
@@ -67,5 +71,9 @@ void openae_context_update_all(void);
  * @brief Dispose a context
  */
 void openae_context_dispose(void);
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif
