@@ -14,23 +14,21 @@
 #endif
 
 
-openae_stream_t openae_stream_create(const char* filepath)
+void openae_stream_create(openae_stream_t* stream, const char* filepath)
 {
-    openae_stream_t stream;
-    memset(&stream, 0, sizeof(openae_stream_t));
+    memset(stream, 0, sizeof(openae_stream_t));
 
-    stream.file = openae_audio_file_open(filepath);
-    assume(openae_audio_file_is_valid(&stream.file), stream);
+    stream->file = openae_audio_file_open(filepath);
+    assume(openae_audio_file_is_valid(&stream->file));
 
-    stream.volume = 1.0f;
-    stream.format = stream.file.format;
+    stream->volume = 1.0f;
+    stream->format = stream->file.format;
 
 #ifndef __PSP__
-    alGenSources(1, &stream.source);
-    alGenBuffers(OPENAE_AUDIO_BUFFERS_PER_SOURCE, stream.buffers);
+    alGenSources(1, &stream->source);
+    alGenBuffers(OPENAE_AUDIO_BUFFERS_PER_SOURCE, stream->buffers);
 #endif
 
-    return stream;
 }
 
 void openae_stream_update(openae_stream_t* stream)

@@ -41,7 +41,7 @@ typedef struct openae_stream_t
  * @param file File path
  * @returns Audio stream
  */
-openae_stream_t openae_stream_create(const char* filepath);
+void openae_stream_create(openae_stream_t* stream, const char* filepath);
 
 /**
  * @brief Update the stream

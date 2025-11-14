@@ -96,7 +96,7 @@ openae_stream_t* openae_context_set_music(const char* filepath)
 
     openae_stream_stop(&openae_current_context.music);
     openae_stream_dispose(&openae_current_context.music);
-    openae_current_context.music = openae_stream_create(filepath);
+    openae_stream_create(&openae_current_context.music, filepath);
     assume(openae_stream_is_valid(&openae_current_context.music), NULL);
     openae_stream_start(&openae_current_context.music);
     return &openae_current_context.music;
@@ -124,7 +124,7 @@ openae_stream_t* openae_context_play_sfx(const char* filepath)
     }
 
     openae_stream_dispose(&openae_current_context.sfx[freeIndex]);
-    openae_current_context.sfx[freeIndex] = openae_stream_create(filepath);
+    openae_stream_create(&openae_current_context.sfx[freeIndex], filepath);
     assume(openae_stream_is_valid(&openae_current_context.sfx[freeIndex]), NULL);
     openae_stream_start(&openae_current_context.sfx[freeIndex]);
 

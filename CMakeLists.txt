@@ -55,9 +55,29 @@ set(project_sources
     src/stream.c
 )
 
+if (UNIX)
+    set(CMAKE_C_FLAGS_DEBUG "-O0 -g3 -ggdb")
+    set(CMAKE_C_FLAGS_RELEASE "-O3")
+    set(CMAKE_CXX_FLAGS_DEBUG "-O0 -g3 -ggdb")
+    set(CMAKE_CXX_FLAGS_RELEASE "-O3")
+
+    add_compile_options(
+        "-Wall" "-Wextra" "-Wpedantic" "-fexceptions" "-Wl,--export-dynamic"
+    )
+endif()
+
 add_compile_definitions(NOMINMAX AL_LIBTYPE_STATIC MINIMP3_NO_SIMD)
 add_library(${PROJECT_NAME} STATIC ${project_sources} ${library_sources})
 if(PSP)
+    set(CMAKE_C_FLAGS_DEBUG "-O0 -g3 -ggdb")
+    set(CMAKE_C_FLAGS_RELEASE "-O3")
+    set(CMAKE_CXX_FLAGS_DEBUG "-O0 -g3 -ggdb")
+    set(CMAKE_CXX_FLAGS_RELEASE "-O3")
+
+    add_compile_options(
+        "-Wall" "-Wextra" "-Wpedantic" "-fexceptions" "-Wl,--export-dynamic"
+    )
+
     add_compile_definitions(__PSP__)
     target_link_libraries(${PROJECT_NAME} PRIVATE
         pspaudiolib
