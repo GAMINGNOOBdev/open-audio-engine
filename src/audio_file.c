@@ -62,11 +62,7 @@ openae_audio_file_t openae_audio_file_open(const char* filepath)
     else if (mp3 == 0)
     {
         LOGINFO("loading mp3 file '%s'", filepath);
-        #ifdef __PSP__
         if (mp3dec_ex_open(&file.mp3, filepath, MP3D_SEEK_TO_BYTE))
-        #else
-        if (mp3dec_ex_open(&file.mp3, filepath, MP3D_SEEK_TO_SAMPLE))
-        #endif
         {
             LOGERROR("could not load audio file '%s': Unknown error", filepath);
             return file;
