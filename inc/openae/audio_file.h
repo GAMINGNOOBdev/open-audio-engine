@@ -39,9 +39,8 @@ typedef struct openae_audio_file_t
  * @brief Open an audio file
  * 
  * @param filepath Path to the file
- * @returns An audio file handle
  */
-openae_audio_file_t openae_audio_file_open(const char* filepath);
+void openae_audio_file_open(openae_audio_file_t* file, const char* filepath);
 
 /**
  * @brief Check if the audio file is valid (data loaded, etc.)

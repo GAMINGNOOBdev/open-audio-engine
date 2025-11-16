@@ -18,7 +18,7 @@ void openae_stream_create(openae_stream_t* stream, const char* filepath)
 {
     memset(stream, 0, sizeof(openae_stream_t));
 
-    stream->file = openae_audio_file_open(filepath);
+    openae_audio_file_open(&stream->file, filepath);
     assume(openae_audio_file_is_valid(&stream->file));
 
     stream->volume = 1.0f;
