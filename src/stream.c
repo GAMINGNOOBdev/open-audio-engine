@@ -56,7 +56,7 @@ void openae_stream_update(openae_stream_t* stream)
     if (processed_buffer_count <= 0)
         return;
 
-    ALuint* buffers = openae_context_get_current()->processed_buffers;
+    ALuint buffers[OPENAE_AUDIO_BUFFERS_PER_SOURCE];
     alSourceUnqueueBuffers(stream->source, processed_buffer_count, buffers);
 
     for (int i = 0; i < processed_buffer_count; i++)
@@ -164,12 +164,10 @@ void openae_stream_stop(openae_stream_t* stream)
 
 #ifndef __PSP__
     ALint processed_buffer_count = 0;
+    ALuint buffers[OPENAE_AUDIO_BUFFERS_PER_SOURCE];
     alGetSourcei(stream->source, AL_BUFFERS_PROCESSED, &processed_buffer_count);
     if (processed_buffer_count > 0)
-    {
-        memset(openae_context_get_current()->processed_buffers, 0, sizeof(ALuint)*OPENAE_AUDIO_BUFFERS_PER_SOURCE);
-        alSourceUnqueueBuffers(stream->source, OPENAE_AUDIO_BUFFERS_PER_SOURCE, openae_context_get_current()->processed_buffers);
-    }
+        alSourceUnqueueBuffers(stream->source, OPENAE_AUDIO_BUFFERS_PER_SOURCE, buffers);
     alSourceStop(stream->source);
 #endif
 }
@@ -183,11 +181,10 @@ void openae_stream_dispose(openae_stream_t* stream)
 #ifndef __PSP__
     ALint processed_buffer_count = 0;
     alGetSourcei(stream->source, AL_BUFFERS_PROCESSED, &processed_buffer_count);
+
+    ALuint buffers[OPENAE_AUDIO_BUFFERS_PER_SOURCE];
     if (processed_buffer_count > 0)
-    {
-        memset(openae_context_get_current()->processed_buffers, 0, sizeof(ALuint)*OPENAE_AUDIO_BUFFERS_PER_SOURCE);
-        alSourceUnqueueBuffers(stream->source, OPENAE_AUDIO_BUFFERS_PER_SOURCE, openae_context_get_current()->processed_buffers);
-    }
+        alSourceUnqueueBuffers(stream->source, OPENAE_AUDIO_BUFFERS_PER_SOURCE, buffers);
 
     alDeleteBuffers(OPENAE_AUDIO_BUFFERS_PER_SOURCE, stream->buffers);
     alDeleteSources(1, &stream->source);

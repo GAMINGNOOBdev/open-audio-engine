@@ -35,12 +35,7 @@ typedef struct openae_context_t
 /**
  * @brief Initialize the audio context
  */
-void openae_context_initialize(void);
-
-/**
- * @brief Get current context
- */
-openae_context_t* openae_context_get_current(void);
+void openae_context_initialize(openae_context_t* ctx);
 
 /**
  * @brief Set the currently playing music (immediately playing it)
@@ -50,7 +45,7 @@ openae_context_t* openae_context_get_current(void);
  * 
  * @returns The created stream
  */
-openae_stream_t* openae_context_set_music(const char* filepath);
+openae_stream_t* openae_context_set_music(openae_context_t* ctx, const char* filepath);
 
 /**
  * @brief Add a sfx to the queue (and immediately playing it)
@@ -60,17 +55,17 @@ openae_stream_t* openae_context_set_music(const char* filepath);
  * 
  * @returns The created stream
  */
-openae_stream_t* openae_context_play_sfx(const char* filepath);
+openae_stream_t* openae_context_play_sfx(openae_context_t* ctx, const char* filepath);
 
 /**
  * @brief Update all and every sounds
  */
-void openae_context_update_all(void);
+void openae_context_update_all(openae_context_t* ctx);
 
 /**
  * @brief Dispose a context
  */
-void openae_context_dispose(void);
+void openae_context_dispose(openae_context_t* ctx);
 
 #ifdef __cplusplus
 }

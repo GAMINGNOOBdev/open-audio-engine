@@ -50,27 +50,26 @@ static void openae_fill_buffer_callback(void* buffer, unsigned int samples, void
 #endif
 
 static openae_context_t openae_current_context;
-static uint8_t openae_initialized = 0;
 
-void openae_context_initialize(void)
+void openae_context_initialize(openae_context_t* ctx)
 {
-    assume(!openae_initialized);
+    assume(ctx);
+    assume(!ctx->initialized);
 
-    openae_initialized = 1;
-    memset(&openae_current_context, 0, sizeof(openae_context_t));
-    openae_current_context.volume = 1.0f;
+    memset(ctx, 0, sizeof(openae_context_t));
+    ctx->volume = 1.0f;
 
 #ifdef __PSP__
     pspAudioInit();
-    pspAudioSetChannelCallback(0, openae_fill_buffer_callback, (void*)&openae_current_context.music);
+    pspAudioSetChannelCallback(0, openae_fill_buffer_callback, (void*)&ctx->music);
     for (size_t i = 0; i < OPENAE_AUDIO_SFX_STREAMS_MAX; i++)
-        pspAudioSetChannelCallback(1 + i, openae_fill_buffer_callback, (void*)(&openae_current_context.sfx[i]));
+        pspAudioSetChannelCallback(1 + i, openae_fill_buffer_callback, (void*)(&ctx->sfx[i]));
 #else
-    openae_current_context.device = openae_context_choose_device();
-    openae_current_context.context = alcCreateContext(openae_current_context.device, NULL);
-    alcMakeContextCurrent(openae_current_context.context);
+    ctx->device = openae_context_choose_device();
+    ctx->context = alcCreateContext(ctx->device, NULL);
+    alcMakeContextCurrent(ctx->context);
 
-    alListenerf(AL_GAIN, openae_current_context.volume);
+    alListenerf(AL_GAIN, ctx->volume);
     alListener3f(AL_POSITION, 0, 0, 0);
     alListener3f(AL_VELOCITY, 0, 0, 0);
     ALfloat listenerOrientation[] = {
@@ -79,38 +78,33 @@ void openae_context_initialize(void)
     alListenerfv(AL_ORIENTATION, listenerOrientation);
 #endif
 
-    openae_current_context.initialized = 1;
+    ctx->initialized = 1;
 }
 
-openae_context_t* openae_context_get_current(void)
+openae_stream_t* openae_context_set_music(openae_context_t* ctx, const char* filepath)
 {
-    assume(openae_initialized, NULL);
-
-    return &openae_current_context;
-}
-
-openae_stream_t* openae_context_set_music(const char* filepath)
-{
-    assume(openae_initialized, NULL);
+    assume(ctx, NULL);
+    assume(ctx->initialized, NULL);
     assume(filepath, NULL);
 
-    openae_stream_stop(&openae_current_context.music);
-    openae_stream_dispose(&openae_current_context.music);
-    openae_stream_create(&openae_current_context.music, filepath);
-    assume(openae_stream_is_valid(&openae_current_context.music), NULL);
-    openae_stream_start(&openae_current_context.music);
-    return &openae_current_context.music;
+    openae_stream_stop(&ctx->music);
+    openae_stream_dispose(&ctx->music);
+    openae_stream_create(&ctx->music, filepath);
+    assume(openae_stream_is_valid(&ctx->music), NULL);
+    openae_stream_start(&ctx->music);
+    return &ctx->music;
 }
 
-openae_stream_t* openae_context_play_sfx(const char* filepath)
+openae_stream_t* openae_context_play_sfx(openae_context_t* ctx, const char* filepath)
 {
-    assume(openae_initialized, NULL);
+    assume(ctx, NULL);
+    assume(ctx->initialized, NULL);
     assume(filepath, NULL);
 
     int freeIndex = -1;
     for (int i = 0; i < OPENAE_AUDIO_SFX_STREAMS_MAX; i++)
     {
-        if (!openae_stream_is_valid(&openae_current_context.sfx[i]))
+        if (!openae_stream_is_valid(&ctx->sfx[i]))
         {
             freeIndex = i;
             break;
@@ -123,30 +117,31 @@ openae_stream_t* openae_context_play_sfx(const char* filepath)
         return NULL;
     }
 
-    openae_stream_dispose(&openae_current_context.sfx[freeIndex]);
-    openae_stream_create(&openae_current_context.sfx[freeIndex], filepath);
-    assume(openae_stream_is_valid(&openae_current_context.sfx[freeIndex]), NULL);
-    openae_stream_start(&openae_current_context.sfx[freeIndex]);
+    openae_stream_dispose(&ctx->sfx[freeIndex]);
+    openae_stream_create(&ctx->sfx[freeIndex], filepath);
+    assume(openae_stream_is_valid(&ctx->sfx[freeIndex]), NULL);
+    openae_stream_start(&ctx->sfx[freeIndex]);
 
-    return &openae_current_context.sfx[freeIndex];
+    return &ctx->sfx[freeIndex];
 }
 
-void openae_context_update_all(void)
+void openae_context_update_all(openae_context_t* ctx)
 {
-    assume(openae_initialized);
+    assume(ctx);
+    assume(ctx->initialized);
 
 #ifndef __PSP__
-    alListenerf(AL_GAIN, openae_current_context.volume);
+    alListenerf(AL_GAIN, ctx->volume);
 #else
-    int vol = (int)(openae_current_context.volume * (float)PSP_VOLUME_MAX);
+    int vol = (int)(ctx->volume * (float)PSP_VOLUME_MAX);
     pspAudioSetVolume(0, vol, vol);
 #endif
-    openae_stream_t* music = &openae_current_context.music;
+    openae_stream_t* music = &ctx->music;
     if (openae_stream_is_valid(music))
         openae_stream_update(music);
     for (int i = 0; i < OPENAE_AUDIO_SFX_STREAMS_MAX; i++)
     {
-        openae_stream_t* sfx = &openae_current_context.sfx[i];
+        openae_stream_t* sfx = &ctx->sfx[i];
         if (!openae_stream_is_valid(sfx))
             continue;
         openae_stream_update(sfx);
@@ -159,22 +154,21 @@ void openae_context_update_all(void)
         openae_stream_dispose(music);
 }
 
-void openae_context_dispose(void)
+void openae_context_dispose(openae_context_t* ctx)
 {
-    assume(openae_initialized);
+    assume(ctx);
+    assume(ctx->initialized);
 
-    openae_stream_dispose(&openae_current_context.music);
+    openae_stream_dispose(&ctx->music);
     for (int i = 0; i < OPENAE_AUDIO_SFX_STREAMS_MAX; i++)
-        openae_stream_dispose(&openae_current_context.sfx[i]);
-
-    openae_initialized = 0;
+        openae_stream_dispose(&ctx->sfx[i]);
 
 #ifdef __PSP__
     pspAudioEnd();
 #else
     alcMakeContextCurrent(NULL);
-    alcDestroyContext(openae_current_context.context);
-    alcCloseDevice(openae_current_context.device);
+    alcDestroyContext(ctx->context);
+    alcCloseDevice(ctx->device);
 #endif
-    memset(&openae_current_context, 0, sizeof(openae_context_t));
+    memset(ctx, 0, sizeof(openae_context_t));
 }

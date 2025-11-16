@@ -29,16 +29,17 @@ int main(const int argc, const char* argv[])
     log_set_stream(file);
     log_enable_debug_msgs(1);
 
-    openae_context_initialize();
-    openae_stream_t* music = openae_context_set_music(music_path);
-    openae_stream_t* sfx = openae_context_play_sfx(sfx_path);
+    openae_context_t context = {0};
+    openae_context_initialize(&context);
+    openae_stream_t* music = openae_context_set_music(&context, music_path);
+    openae_stream_t* sfx = openae_context_play_sfx(&context, sfx_path);
 
     music->end = music_end;
     sfx->end = sfx_end;
 
     while (music->playing || (sfx && sfx->playing))
-        openae_context_update_all();
-    openae_context_dispose();
+        openae_context_update_all(&context);
+    openae_context_dispose(&context);
 
     fclose(file);
 

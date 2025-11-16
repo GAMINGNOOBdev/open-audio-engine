@@ -80,18 +80,19 @@ int main()
     log_set_msg_handler(loghandlepsp);
     log_enable_debug_msgs(1);
 
-    openae_context_initialize();
-    openae_stream_t* music_stream = openae_context_set_music("snd/0.ogg");
-    openae_stream_t* sfx_stream = openae_context_play_sfx("snd/1.mp3");
+    openae_context_t context = {0};
+    openae_context_initialize(&context);
+    openae_stream_t* music_stream = openae_context_set_music(&context, "snd/0.ogg");
+    openae_stream_t* sfx_stream = openae_context_play_sfx(&context, "snd/1.mp3");
 
     music_stream->end = end;
     sfx_stream->end = end_sfx;
 
     while (is_running())
     {
-        openae_context_update_all(); // technically not needed but wtv, consistency
+        openae_context_update_all(&context); // technically not needed but wtv, consistency
     }
-    openae_context_dispose();
+    openae_context_dispose(&context);
 
     fclose(file);
 
