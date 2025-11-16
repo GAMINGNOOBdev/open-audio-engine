@@ -67,7 +67,7 @@ if (UNIX)
 endif()
 
 add_compile_definitions(NOMINMAX AL_LIBTYPE_STATIC MINIMP3_NO_SIMD)
-add_library(${PROJECT_NAME} STATIC ${project_sources} ${library_sources})
+add_library(${PROJECT_NAME} STATIC ${project_sources})
 if(PSP)
     set(CMAKE_C_FLAGS_DEBUG "-O0 -g3 -ggdb")
     set(CMAKE_C_FLAGS_RELEASE "-O3")
@@ -85,7 +85,7 @@ if(PSP)
         pspaudiocodec
     )
 
-    add_executable(${PROJECT_NAME}_test test/test_psp.c)
+    add_executable(${PROJECT_NAME}_test test/test_psp.c ${library_sources})
     target_link_libraries(${PROJECT_NAME}_test
         ${PROJECT_NAME}
         pspdisplay
@@ -106,7 +106,7 @@ else()
         alsoft.common
     )
 
-    add_executable(${PROJECT_NAME}_test test/test.c)
+    add_executable(${PROJECT_NAME}_test test/test.c ${library_sources})
     target_link_libraries(${PROJECT_NAME}_test
         ${PROJECT_NAME}
     )

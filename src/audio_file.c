@@ -62,9 +62,10 @@ void openae_audio_file_open(openae_audio_file_t* file, const char* filepath)
     else if (mp3 == 0)
     {
         LOGINFO("loading mp3 file '%s'", filepath);
-        if (mp3dec_ex_open(&file->mp3, filepath, MP3D_SEEK_TO_BYTE))
+        int code = mp3dec_ex_open(&file->mp3, filepath, MP3D_SEEK_TO_BYTE);
+        if (code != 0)
         {
-            LOGERROR("could not load audio file '%s': Unknown error", filepath);
+            LOGERROR("could not load audio file '%s': Unknown error %ld", filepath, code);
             return;
         }
 
