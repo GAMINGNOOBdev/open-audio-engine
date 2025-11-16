@@ -1,7 +1,5 @@
-#define MINIMP3_IMPLEMENTATION
 #include <minimp3.h>
 #include <minimp3_ex.h>
-#undef MINIMP3_IMPLEMENTATION
 #include <openae/audio_file.h>
 #include <openae/logging.h>
 #include <openae/context.h>
