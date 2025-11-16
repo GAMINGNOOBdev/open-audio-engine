@@ -31,6 +31,8 @@ set(ALSOFT_INSTALL_EXAMPLES off)
 set(ALSOFT_INSTALL_HRTF_DATA off)
 set(ALSOFT_INSTALL_AMBDEC_PRESETS off)
 
+option(OPENAE_BUILD_TEST "Build openae test" on)
+
 include_directories(
     ${PROJECT_SOURCE_DIR}/inc
     ${PROJECT_SOURCE_DIR}/libwave/include
@@ -85,20 +87,22 @@ if(PSP)
         pspaudiocodec
     )
 
-    add_executable(${PROJECT_NAME}_test test/test_psp.c ${library_sources})
-    target_link_libraries(${PROJECT_NAME}_test
-        ${PROJECT_NAME}
-        pspdisplay
-        pspdebug
-        pspge
-        pspgu
-    )
+    if (OPENAE_BUILD_TEST)
+        add_executable(${PROJECT_NAME}_test test/test_psp.c ${library_sources})
+        target_link_libraries(${PROJECT_NAME}_test
+            ${PROJECT_NAME}
+            pspdisplay
+            pspdebug
+            pspge
+            pspgu
+        )
 
-    create_pbp_file(TARGET ${PROJECT_NAME}_test TITLE "${CMAKE_PROJECT_NAME}"
-        # ICON_PATH
-        # BACKGROUND_PATH
-        # PREVIEW_PATH
-    )
+        create_pbp_file(TARGET ${PROJECT_NAME}_test TITLE "${CMAKE_PROJECT_NAME}"
+            # ICON_PATH
+            # BACKGROUND_PATH
+            # PREVIEW_PATH
+        )
+    endif()
 
 else()
     target_link_libraries(${PROJECT_NAME} PRIVATE
@@ -106,10 +110,12 @@ else()
         alsoft.common
     )
 
-    add_executable(${PROJECT_NAME}_test test/test.c ${library_sources})
-    target_link_libraries(${PROJECT_NAME}_test
-        ${PROJECT_NAME}
-    )
+    if (OPENAE_BUILD_TEST)
+        add_executable(${PROJECT_NAME}_test test/test.c ${library_sources})
+        target_link_libraries(${PROJECT_NAME}_test
+            ${PROJECT_NAME}
+        )
+    endif()
 endif()
 
 
