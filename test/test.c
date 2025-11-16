@@ -3,6 +3,12 @@
 #include <openae/logging.h>
 #include <openae/stream.h>
 
+#define STB_VORBIS_HEADER_ONLY
+#include <stb_vorbis.c>
+#define MINIMP3_IMPLEMENTATION
+#include <minimp3.h>
+#include <minimp3_ex.h>
+
 void music_end(void* _)
 {
     LOGDEBUG("music ended !!");

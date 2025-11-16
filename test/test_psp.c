@@ -9,6 +9,12 @@
 #include <openae/logging.h>
 #include <openae/stream.h>
 
+#define STB_VORBIS_HEADER_ONLY
+#include <stb_vorbis.c>
+#define MINIMP3_IMPLEMENTATION
+#include <minimp3.h>
+#include <minimp3_ex.h>
+
 PSP_MODULE_INFO("OpenAE test", 0, 0, 0);
 PSP_MAIN_THREAD_ATTR(THREAD_ATTR_USER | THREAD_ATTR_VFPU);
 
